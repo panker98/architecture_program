@@ -74,7 +74,7 @@ public class Script_Instance : GH_ScriptInstance
     while(totalOverlap > averageArea * threashold){
       totalOverlap = 0;
       //迭代次数大于100时，每迭代5次对最不符合要求的建筑缩小
-      if(ifChangeScale && count > 100 && count % 5 == 0){
+      if(ifChangeScale && count > 100 && count % 3 == 0){
         //根据智能体逾越场地边界的面积及其与其他智能体缓冲区内的总重叠面积——>判断最不符合要求的建筑
         int scale_index = -1;
         double scale_index_area = 0;
@@ -168,6 +168,7 @@ public class Script_Instance : GH_ScriptInstance
       level.Add(bs[i].level);
     }
     level.Add(totalOverlap);
+    level.Add(count);
     position = pos;
     buildings = footPrint;
     offShape = offSet;
@@ -401,14 +402,14 @@ public class Script_Instance : GH_ScriptInstance
       overlapArea = 0;
       for(int i = 0; i < buildings.Count; i++){
         Building b = buildings[i];
-        Curve[] intersecs = Curve.CreateBooleanIntersection(offShape, b.shape, 0);
+        Curve[] intersecs = Curve.CreateBooleanIntersection(offShape, b.shape, 0.000001);
         if(intersecs.Length != 0){
           for (int j = 0; j < intersecs.Length; j++){
             overlapArea += AreaMassProperties.Compute(intersecs[j]).Area;
           }
         }
       }
-      Curve[] differC = Curve.CreateBooleanDifference(shape, boundary, 0);
+      Curve[] differC = Curve.CreateBooleanDifference(shape, boundary, 0.000001);
       if(differC.Length != 0){
         for (int i = 0; i < differC.Length; i++){
           overlapArea += AreaMassProperties.Compute(differC[i]).Area;
@@ -420,15 +421,18 @@ public class Script_Instance : GH_ScriptInstance
     public double CheckOverlap (List<Building> bs){
       double totalOverlap = 0;
       for(int i = 0; i < bs.Count; i++){
-        for(int j = i + 1; j < bs.Count; j++){
-          Curve[] intersecs = Curve.CreateBooleanIntersection(bs[i].offShape, bs[j].shape, 0);
-          if(intersecs.Length != 0){
-            for (int k = 0; k < intersecs.Length; k++){
-              totalOverlap += AreaMassProperties.Compute(intersecs[k]).Area;
+        for(int j = 0; j < bs.Count; j++){
+          if(i != j)
+          {
+            Curve[] intersecs = Curve.CreateBooleanIntersection(bs[i].shape, bs[j].offShape, 0.000001);
+            if(intersecs.Length != 0){
+              for (int k = 0; k < intersecs.Length; k++){
+                totalOverlap += AreaMassProperties.Compute(intersecs[k]).Area;
+              }
             }
           }
         }
-        Curve[] differC = Curve.CreateBooleanDifference(bs[i].shape, bs[i].boundary, 0);
+        Curve[] differC = Curve.CreateBooleanDifference(bs[i].shape, bs[i].boundary, 0.000001);
         if(differC.Length != 0){
           for (int j = 0; j < differC.Length; j++){
             totalOverlap += AreaMassProperties.Compute(differC[j]).Area;
@@ -440,7 +444,7 @@ public class Script_Instance : GH_ScriptInstance
 
     //计算场地边界对出界智能体的动量
     public void CheckEdge(){
-      Curve[] differC = Curve.CreateBooleanDifference(shape, boundary, 0);
+      Curve[] differC = Curve.CreateBooleanDifference(shape, boundary, 0.000001);
       if(differC.Length != 0){
         Vector3d pushBack = new Vector3d();
         for (int i = 0; i < differC.Length; i++){
@@ -457,19 +461,19 @@ public class Script_Instance : GH_ScriptInstance
     //判断该智能体是否与某智能体缓冲区内重叠，若有则两智能体都增加动量
     public void Seperate (Building b){
       double overlap = 0;
-      Curve[] intersecs = Curve.CreateBooleanIntersection(offShape, b.shape, 0);
+      Curve[] intersecs = Curve.CreateBooleanIntersection(shape, b.offShape, 0.000001);
       if(intersecs.Length != 0){
         for (int j = 0; j < intersecs.Length; j++){
           overlap += AreaMassProperties.Compute(intersecs[j]).Area;
           Point3d interCenter = GetCenter(intersecs[j]);
           Vector3d pi = Point3d.Subtract(pos, interCenter);
-          Vector3d pj = Point3d.Subtract(b.pos, interCenter);
+          Vector3d pj = Point3d.Subtract(GetCenter(b.offShape), interCenter);
           if(pi.Length == 0){
             pi = Point3d.Subtract(pos, b.pos);
-            pj = Point3d.Subtract(b.pos, pos);
+            pj = Point3d.Subtract(GetCenter(b.offShape), pos);
           }
 
-          double dist = pos.DistanceTo(b.pos);
+          double dist = pos.DistanceTo(GetCenter(b.offShape));
           pi = Vector3d.Multiply(pi, 4 / dist);
           pj = Vector3d.Multiply(pj, 4 / dist);
           move = Vector3d.Add(move, Vector3d.Multiply(pi, 0.5));
