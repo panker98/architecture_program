@@ -305,7 +305,6 @@ public class Script_Instance : GH_ScriptInstance
                   break;
                 }
               }
-              //向上调整必然要相应地缩小
               //在范围内对楼层向上调整后，可使容积率拟合
               if(value_ftemp >= plotRatio_min * boundaryArea){
                 ifChangeScale = false;
@@ -313,6 +312,9 @@ public class Script_Instance : GH_ScriptInstance
                 totalOverlap = double.MaxValue;
                 scale_anum = 0;
                 count = 0;
+                for(int i = 0;i < bs.Count;i++){
+                  bs[i].offShape = bs[i].CreateBuffer(bs[i].shape, bs[i].floor_height * bs[i].floor_num);
+                }
                 continue;
               }
                 //楼层调至最低仍无法拟合容积率
@@ -447,7 +449,7 @@ public class Script_Instance : GH_ScriptInstance
       offShape = CreateBuffer(shape, floor_height * floor_num);
     }
     //创建缓冲
-    private Curve CreateBuffer(Curve x, double y)
+    public Curve CreateBuffer(Curve x, double y)
     {
 
       List<Point3d> points_o = new List<Point3d>();
