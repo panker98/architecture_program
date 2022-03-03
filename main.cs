@@ -52,11 +52,20 @@ public class Script_Instance : GH_ScriptInstance
   /// Output parameters as ref arguments. You don't have to assign output parameters,
   /// they will have a default value.
   /// </summary>
-  private void RunScript(Curve boundary, Curve shape_type, double floor_height, int floor_num, double density_min, double density_max, double plotRatio_min, double plotRatio_max, double threashold, double scale_factor, double area_limit, int floor_min, int floor_max, ref object position, ref object buildings, ref object offShape, ref object w)
+  private void RunScript(Curve boundary, Curve shape_type, double floor_height, List<double> density_, List<double> plotRatio_, List<int> floor_, double threashold, double scale_factor, double area_limit, string active, ref object position, ref object buildings, ref object offShape, ref object w)
   {
+
     //======初始化======
     com_void = new Common_void();
-    string warning = "拟合";
+    string warning = "";
+
+    double density_min = density_[0];
+    double density_max = density_[1];
+    double plotRatio_min = plotRatio_[0];
+    double plotRatio_max = plotRatio_[1];
+    int floor_num = floor_[0];
+    int floor_min = floor_[1];
+    int floor_max = floor_[2];
     //计算场地面积
     double boundaryArea = AreaMassProperties.Compute(boundary).Area;
     double shape_area = AreaMassProperties.Compute(shape_type).Area;
@@ -489,7 +498,6 @@ public class Script_Instance : GH_ScriptInstance
       //找出最北面的边的长度
       double distance_N_len = 0;
       for (int i = 0;i < points_num - 1;i++){
-        Point3d temp = new Point3d();
         //南北侧
         if(Math.Abs(points_o[i + 1].X - points_o[i].X) > Math.Abs(points_o[i + 1].Y - points_o[i].Y))
         {
@@ -767,11 +775,6 @@ public class Script_Instance : GH_ScriptInstance
     }
 
   }
-
-
-
-
-
 
   // </Custom additional code> 
 }
